@@ -1,46 +1,88 @@
 using UnityEngine;
 using System.Collections;
 
-public class ColourWell : ColourBeing {
-	int colourToAdd;
-	public int giveRate = 8;
-	protected Avatar avatar;
+public class ColourWell : MonoBehaviour {
 	
-	// Use this for initialization
+	public enum _WellTypeEnum{
+		RedGyser_1, RedGyser_2, RedLeak_1, BlueWell_1, BlueLeak_1, BlueLeak_2
+	}
+	
+	public _WellTypeEnum wellType;
+	
+	private ChromatoseManager _Manager;
+	private Avatar _AvatarScript;
+	private Color myColor;
+	private tk2dAnimatedSprite _MainAnim;
+	
+	
+	private string redWellString1 = "redWellL1_gyser";
+	private string redWellString2 = "redWellL2_gyser";
+	private string redWellString3 = "redWellL3_wall";
+	private string blueWellString1 = "blueWellL4";
+	private string blueWellString2 = "blueWell_godBlavatar";
+	private string blueWellString3 = "blueWell_leakPomp";
+	
 	void Start () {
-		if (colour.r > colourConsiderMin){
-			colourToAdd = 0;
-		}
-		else if(colour.g > colourConsiderMin){
-			colourToAdd = 1;
-		}
-		else if(colour.b > colourConsiderMin){
-			colourToAdd = 2;
-		}
+		_MainAnim = GetComponent<tk2dAnimatedSprite>();
 		
-		manager = ChromatoseManager.manager;
-		avatar = GameObject.Find("Avatar").GetComponent<Avatar>();
+		switch(wellType){
+		case _WellTypeEnum.RedGyser_1:
+			myColor = Color.red;
+			_MainAnim.Play(redWellString1);
+			
+			break;
+		case _WellTypeEnum.RedGyser_2:
+			myColor = Color.red;
+			_MainAnim.Play(redWellString2);
+			BoxCollider bCollider = GetComponent<BoxCollider>();
+			bCollider.center = new Vector3(3.5f, -50f, 0f);
+			
+			break;
+		case _WellTypeEnum.RedLeak_1:
+			myColor = Color.red;
+			_MainAnim.Play(redWellString3);
+			
+			break;
+		case _WellTypeEnum.BlueWell_1:
+			myColor = Color.blue;
+			_MainAnim.Play(blueWellString1);
+			
+			break;
+		case _WellTypeEnum.BlueLeak_1:
+			myColor = Color.blue;
+			_MainAnim.Play(blueWellString2);
+			
+			break;
+		case _WellTypeEnum.BlueLeak_2:
+			myColor = Color.blue;
+			_MainAnim.Play(blueWellString3);
+			
+			break;
+		}
 	}
 	
-	// Update is called once per frame
-	void Update () {
-	
-	}
 	
 	void OnTriggerStay(Collider collider){
 		
-		if (collider != avatar.collider) return;
-		if (colour.Red)
-			avatar.OnRedWell = true;
+		if (collider.tag != "avatar") return;
+		if (myColor == Color.red){
+			GameObject.FindGameObjectWithTag("avatar").GetComponent<Avatar>().OnRedWell = true;
+		}
 		
-		manager.UpdateAction(Actions.Absorb, Trigger);		//this tells the manager that I want to do something. But I'll have to wait in line!
-		
-		
+	 	HUDManager.hudManager.UpdateAction(Actions.Absorb, Trigger);		//this tells the manager that I want to do something. But I'll have to wait in line!
+	}
+	void OnTriggerExit(Collider collider){
+		if(collider.tag != "avatar") return;
+		if(myColor == Color.red){
+			GameObject.FindGameObjectWithTag("avatar").GetComponent<Avatar>().OnRedWell = false;
+		}
+		HUDManager.hudManager.OffAction();
 	}
 	
 	
-	override public void Trigger(){
-		Debug.Log("Should be setting colour");
-		avatar.TakeColour(colour);
+	void Trigger(){
+
+		GameObject.FindGameObjectWithTag("avatar").GetComponent<Avatar>().FillBucket(myColor);
+		MusicManager.soundManager.PlaySFX(25);
 	}
 }

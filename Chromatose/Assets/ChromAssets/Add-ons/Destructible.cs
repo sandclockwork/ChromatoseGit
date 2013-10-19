@@ -20,6 +20,9 @@ public class Destructible : MonoBehaviour {		//move sprite @ 15 frames or 0.5f s
 	protected int avatarMinDist = 85;
 	protected Transform avatar;
 	
+	
+	private bool setuped = false;
+	
 	[System.SerializableAttribute]
 	public class TargetMessageReceivers{
 		public GameObject target;
@@ -56,7 +59,14 @@ public class Destructible : MonoBehaviour {		//move sprite @ 15 frames or 0.5f s
 	
 	// Use this for initialization
 	void Start () {
-		Setup();
+		spriteInfo = GetComponent<tk2dSprite>();
+		poof = Instantiate(poof) as GameObject;
+		poof.SetActive(false);
+		anim = poof.GetComponent<tk2dAnimatedSprite>();
+		anim.animationEventDelegate = NextImage;
+		anim.animationCompleteDelegate = Done;	
+		
+		//Setup();
 		
 	}
 	
@@ -65,27 +75,31 @@ public class Destructible : MonoBehaviour {		//move sprite @ 15 frames or 0.5f s
 		Checks();
 	}
 	
-	protected virtual void Setup(){
-		avatar = GameObject.Find("Avatar").transform;
+	void Setup(){
+		//yield return new WaitForSeconds(0.1f);
+		avatar = GameObject.FindGameObjectWithTag("avatar").transform;
 		avatarScript = avatar.GetComponent<Avatar>();
-		spriteInfo = GetComponent<tk2dSprite>();
-		poof = Instantiate(poof) as GameObject;
-		poof.SetActive(false);
-		anim = poof.GetComponent<tk2dAnimatedSprite>();
-		anim.animationEventDelegate = NextImage;
-		anim.animationCompleteDelegate = Done;	
+		setuped = true;
 	}
 	
 	protected virtual void Checks(){
-		float dist = Vector3.Distance(avatar.position, myNode.position);
-		
-		if (collider.bounds.Contains(avatar.position)){
-			ChromatoseManager.manager.UpdateAction(Actions.Destroy, Action);
-			avatarScript.AtDestructible = true;
+		if(setuped){
+			if(Vector3.Distance(avatar.position, myNode.position) > 300)return;
+				
+											//<----C'est ici que le check se fait mal
+			if (collider.bounds.Contains(avatar.position)){
+				HUDManager.hudManager.UpdateAction(Actions.Destroy, Action);	//<----Peut que si on a pas fait d'autre action, le trigger se ne se reinitialise pas
+				avatarScript.AtDestructible = true;									//<----sert que pour la Bubble
+			}
+			else if(!collider.bounds.Contains(avatar.position) && avatarScript.AtDestructible){
+				HUDManager.hudManager.OffAction();
+				avatarScript.AtDestructible = false;
+			}
+			
 		}
-		
-		
-		if (!avatarScript.colour.Red) return;
+		else{
+			Setup();
+		}
 	}
 	
 	protected virtual void Destruct(){
@@ -102,14 +116,19 @@ public class Destructible : MonoBehaviour {		//move sprite @ 15 frames or 0.5f s
 		
 		anim.Play();
 		anim.CurrentClip.wrapMode = tk2dSpriteAnimationClip.WrapMode.Once;
-		
-		//TODO PUT AN ANIMATION SHOWING LOSS OF COLOUR!
+
 	}
 	
 	protected virtual void Action(){
+		if (avatarScript.curColor != Color.red) {return;}	
+//		Debug.Log("Wanna Destroy Me?");
 		avatarScript.HasDestroyed = true;
 		avatarScript.GiveColourTo(transform, avatar);
-		avatarScript.SetColour(0, avatarScript.colour.g, avatarScript.colour.b);
+		avatarScript.EmptyingBucket();
+		MusicManager.soundManager.PlaySFX(49);
+		StartCoroutine(DelaiSFX());
+		avatarScript.AtDestructible = false;
+		HUDManager.hudManager.OffAction ();
 		Invoke("Destruct", 0.5f);
 	}
 	
@@ -140,7 +159,6 @@ public class Destructible : MonoBehaviour {		//move sprite @ 15 frames or 0.5f s
 		}
 		Debug.Log(newNewName);
 		spriteInfo.SetSprite(spriteInfo.GetSpriteIdByName(newNewName));
-		//spriteInfo.spriteId ++;
 	}
 	
 	protected virtual void Done(tk2dAnimatedSprite sprite, int index){
@@ -153,5 +171,10 @@ public class Destructible : MonoBehaviour {		//move sprite @ 15 frames or 0.5f s
 	void OnDrawGizmosSelected(){
 		Gizmos.color = Color.yellow;
 		Gizmos.DrawWireSphere(transform.position + (Vector3) poofOffset, 10);
+	}
+	
+	IEnumerator DelaiSFX(){
+		yield return new WaitForSeconds(0.5f);
+		MusicManager.soundManager.PlaySFX(22);
 	}
 }

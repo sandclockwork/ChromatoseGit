@@ -1,12 +1,15 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using ChromaConst;
 
-
-public class DangerBlob : ColourBeing {
+public class DangerBlob : MonoBehaviour {
+	/*
+	private Rigidbody _AvatarRigid;
 	public float knockback = 50f;
 	public bool diesOnImpact = false;
 	public bool isBlackFlame = false;
+	public bool _WaitAvatarMove = false;
 	private tk2dAnimatedSprite[] myFlames;
 	private bool beingExtinguished = false;
 	private List<tk2dAnimatedSprite> dyingFlames = new List<tk2dAnimatedSprite>();
@@ -67,59 +70,51 @@ public class DangerBlob : ColourBeing {
 	
 	// Use this for initialization
 	void Start () {
-		movement.Setup(gameObject);
-		movement.t = transform;
-		avatarT = GameObject.FindWithTag("avatar").transform;
-		anim = GetComponent<tk2dAnimatedSprite>();
-		if (colour.Red || isBlackFlame){
-			myFlames = GetComponentsInChildren<tk2dAnimatedSprite>();
-			
-			GameObject obj = Resources.Load("animref_nme") as GameObject;
-			tk2dSpriteAnimation nmeAnim = obj.GetComponent<tk2dAnimatedSprite>().anim;
-			foreach (tk2dAnimatedSprite flanim in myFlames){
-				if (flanim == GetComponent<tk2dAnimatedSprite>()) continue;
-				int i = Random.Range(1, 11);
-				flanim.anim = nmeAnim;
-				flanim.Play(flameName + i.ToString());
-				flanim.transform.rotation = Quaternion.identity;
-			}
-		}
+		StartCoroutine(Setup());
 	}
 	
 	// Update is called once per frame
 	void Update () {
-		if (colour.White)
-		movement.Move();
-		if (beingExtinguished){
-			tk2dAnimatedSprite next = null;
-			float shortestDist = 1000;
-			foreach (tk2dAnimatedSprite sprite in myFlames){
-				float dist = Vector3.Distance(sprite.transform.position, avatarT.position);
-				if (dist < shortestDist && !dyingFlames.Contains(sprite)){
-					next = sprite;
-					shortestDist = dist;
+		if(!_WaitAvatarMove){
+			if (colour.White)
+			movement.Move();
+			if (beingExtinguished){
+				tk2dAnimatedSprite next = null;
+				float shortestDist = 1000;
+				foreach (tk2dAnimatedSprite sprite in myFlames){
+					float dist = Vector3.Distance(sprite.transform.position, avatarT.position);
+					if (dist < shortestDist && !dyingFlames.Contains(sprite)){
+						next = sprite;
+						shortestDist = dist;
+					}
+				}
+				if (next){
+					dyingFlames.Add(next);
+					dyingAlphas.Add(1f);
+				}
+				float highestAlpha = 0;
+				for(int i = 0; i < dyingFlames.Count; i ++){
+					dyingAlphas[i] -= fadeRate;
+					if (dyingAlphas[i] > highestAlpha){
+						highestAlpha = dyingAlphas[i];
+					}
+					dyingFlames[i].SendMessage("FadeAlpha", dyingAlphas[i]);
+					
+				}
+				if (highestAlpha <= 0){
+					beingExtinguished = false;
+					DeadAndGone();
 				}
 			}
-			if (next){
-				dyingFlames.Add(next);
-				dyingAlphas.Add(1f);
-					Debug.Log("Next is next! its name is + " + next.name);
-			}
-			float highestAlpha = 0;
-			for(int i = 0; i < dyingFlames.Count; i ++){
-				dyingAlphas[i] -= fadeRate;
-				if (dyingAlphas[i] > highestAlpha){
-					highestAlpha = dyingAlphas[i];
-				}
-				dyingFlames[i].SendMessage("FadeAlpha", dyingAlphas[i]);
-				
-			}
-			if (highestAlpha <= 0){
-				beingExtinguished = false;
-				DeadAndGone();
+			
+		}
+		else{
+			//if(_AvatarRigid.velocity.x > 0.5f || _AvatarRigid.velocity.y > 0.5f || _AvatarRigid.velocity.x < -0.5f || _AvatarRigid.velocity.y < -0.5f){
+			if(GameObject.FindGameObjectWithTag("avatar").transform.position != GameObject.FindGameObjectWithTag("avatar").GetComponent<Avatar>().initPos){
+			
+			_WaitAvatarMove = false;
 			}
 		}
-		
 	}
 
 	
@@ -128,10 +123,10 @@ public class DangerBlob : ColourBeing {
 			return;
 		}
 		
+		
 		Avatar avatar = other.gameObject.GetComponent<Avatar>();
-		bool sameColour = CheckSameColour(avatar.colour);
+		bool sameColour = avatar.curColor == Color.red? true : false;
 		if (sameColour && diesOnImpact){
-			Debug.Log("Bye bye");
 			Dead = true;
 			if (colour.Red)
 				beingExtinguished = true;
@@ -144,8 +139,9 @@ public class DangerBlob : ColourBeing {
 		if (anim != null && colour.Blue){
 			anim.Play();
 		}
-		ChromatoseManager.manager.Death();
 		
+		ChromatoseManager.manager.Death();
+		other.gameObject.GetComponent<Avatar>().EmptyingBucket();
 		//avatar.Damage();    //remove HP from the avatar, but this isn't implemented yet
 	}
 	
@@ -188,5 +184,26 @@ public class DangerBlob : ColourBeing {
 			this.movement.patrol = true;
 	}
 	
+	IEnumerator Setup(){
+		yield return new WaitForSeconds(0.1f);
+		_AvatarRigid = GameObject.FindWithTag("avatar").GetComponent<Rigidbody>();
+		movement.Setup(gameObject);
+		movement.t = transform;
+		avatarT = GameObject.FindWithTag("avatar").transform;
+		anim = GetComponent<tk2dAnimatedSprite>();
+		if (colour.Red || isBlackFlame){
+			myFlames = GetComponentsInChildren<tk2dAnimatedSprite>();
+			
+			GameObject obj = Resources.Load("animref_nme") as GameObject;
+			tk2dSpriteAnimation nmeAnim = obj.GetComponent<tk2dAnimatedSprite>().anim;
+			foreach (tk2dAnimatedSprite flanim in myFlames){
+				if (flanim == GetComponent<tk2dAnimatedSprite>()) continue;
+				int i = 1;//Random.Range(1, 11);
+				flanim.anim = nmeAnim;
+				flanim.Play(flameName + i.ToString());
+				flanim.transform.rotation = Quaternion.identity;
+			}
+		}
+	}*/
 }
 

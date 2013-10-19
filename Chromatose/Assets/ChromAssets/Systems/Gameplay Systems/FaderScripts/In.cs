@@ -14,18 +14,16 @@ public class In : MonoBehaviour {
 	}
 	
 	void OnTriggerStay(Collider other){
-		if (other.name == "Avatar"){
+		if (other.tag == "avatar"){
 			//Debug.Log("Trigger:");
 			transform.parent.SendMessage("In");
 		}
-	}
-	
+	}	
 	void OnTriggerEnter(Collider other){
-		Npc npc = other.GetComponent<Npc>();
+		Npc2 npc = other.GetComponent<Npc2>();
 		if (npc){
-			Debug.Log("Yeah let's get in!");
+			npc.transform.parent = null;
 			transform.parent.SendMessage("Enter", npc.gameObject);
 		}
 	}
-	
 }

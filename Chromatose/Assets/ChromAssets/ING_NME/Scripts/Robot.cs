@@ -1,12 +1,14 @@
 using UnityEngine;
 using System.Collections;
 
+
+//TODEl Script a deleter si le module 2 ne voit pas le jour
 public class Robot : MonoBehaviour {
 	
 	public bool rotates = false;
 	public float turnRate = 1f;
 	public bool alternate = false;
-	int angle = 180;
+	public int angle = 180;
 	/*[System.SerializableAttribute]
 	public class DirectionClass{
 		public bool up = true;
@@ -22,7 +24,7 @@ public class Robot : MonoBehaviour {
 	int curSprite = 0;
 	int directionBin;
 	float timer = 0;
-	float delay;
+	public float delay = 1;
 	Transform myLaser;
 	Transform t;
 	tk2dSprite spriteInfo;
@@ -32,17 +34,17 @@ public class Robot : MonoBehaviour {
 		t = GetComponent<Transform>();
 		spriteInfo = t.parent.GetComponent<tk2dSprite>();
 		
-		
+		/*
 		if (t.rotation.eulerAngles.z < -85 && t.rotation.eulerAngles.z > -95){
 			curSprite = 1;
+		}*/
 		
-		}
 		myLaser = GetComponentInChildren<Transform>();
 		if (alternate){
 			delay = turnRate;
 		}
 		/*
-		if (directions.up) directionBin ++;		//TODO : but probably for module 2, fix this so that it will accomodate more than 2 directions!
+		if (directions.up) directionBin ++;
 		if (directions.down) directionBin += 2;
 		if (directions.left) directionBin += 4;
 		if (directions.right) directionBin += 8;
@@ -53,22 +55,19 @@ public class Robot : MonoBehaviour {
 	void Update () {
 		if (!rotates) return;
 		
-		if (delay > 0){
-			delay -= Time.deltaTime;
-			return;
-		}
+		
 		timer += Time.deltaTime;
-		if (timer >= turnRate){
+		if (timer >= delay){
 			curSprite = 1 - curSprite;
-			spriteInfo.SetSprite(sprites[curSprite]);
+			//spriteInfo.SetSprite(sprites[curSprite]);
 			if (curSprite == 0){
-				transform.position = new Vector3(transform.position.x, transform.position.y, -2);
+				transform.position = new Vector3(transform.position.x, transform.position.y, 0.5f);
 			}
 			else{
-				transform.position = new Vector3(transform.position.x, transform.position.y, 2);
+				transform.position = new Vector3(transform.position.x, transform.position.y, 0.5f);
 			}
 			timer = 0;
-			transform.Rotate(new Vector3(0, 0, angle));
+			transform.Rotate(new Vector3(0, 0, angle * turnRate));
 		}
 	}
 	

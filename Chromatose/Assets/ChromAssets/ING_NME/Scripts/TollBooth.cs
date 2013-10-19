@@ -65,6 +65,7 @@ public class TollBooth : MonoBehaviour {
 			StartOut();
 		}
 		else if (dist > avatarCloseDist && isOut){
+			HUDManager.hudManager.OffAction();
 			StartIn();
 		}
 		
@@ -76,18 +77,19 @@ public class TollBooth : MonoBehaviour {
 			return false;
 		}
 		if (myCollider.bounds.Contains(avatarT.position)){
-			chroManager.UpdateAction(action, Pay);
+			HUDManager.hudManager.UpdateAction(action, Pay);
 			return true;
 		}
 		return false;
 	}
 	
 	void Pay(){
-		if (chroManager.GetCollectibles(myCouleur) >= requiredPayment){
+		if (chroManager.GetCollectibles(Color.blue) >= requiredPayment){
 			
 			StartIn();
 			waiting = true;
 			triggered = true;
+			MusicManager.soundManager.PlaySFX(53);
 		
 		}
 	}
@@ -95,6 +97,7 @@ public class TollBooth : MonoBehaviour {
 	void Animate(){
 		anim.Play();
 		anim.CurrentClip.wrapMode = tk2dSpriteAnimationClip.WrapMode.Once;
+		HUDManager.hudManager.OffAction();
 	}
 	
 	void StartOut(){
@@ -124,7 +127,7 @@ public class TollBooth : MonoBehaviour {
 		if (triggered){
 			waiting = false;
 			collisionChild.gameObject.SetActive(false);
-			chroManager.RemoveCollectibles(Couleur.blue, requiredPayment, avatarT.position);
+			chroManager.RemoveCollectibles(Color.blue, requiredPayment, avatarT.position);
 			if (anim)
 				Animate();
 		}
